@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>OMS Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 24px auto; }
+        .row { display: flex; gap: 12px; flex-wrap: wrap; }
+        input { padding: 8px; }
+        button { padding: 8px 12px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 12px; overflow: auto; }
+        .card { border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-top: 12px; }
+    </style>
+</head>
+<body>
+<h1>Order Management System — Demo</h1>
+
+<div class="card">
+    <h3>Создать заказ</h3>
+    <div class="row">
+        <input id="name" placeholder="customerName" />
+        <input id="email" placeholder="customerEmail" />
+        <input id="date" placeholder="createdAt (YYYY-MM-DD)" />
+        <button onclick="createOrder()">Create</button>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Добавить товар в заказ</h3>
+    <div class="row">
+        <input id="orderIdForItem" placeholder="orderId" />
+        <input id="product" placeholder="productName" />
+        <input id="price" placeholder="price" />
+        <input id="qty" placeholder="quantity" />
+        <button onclick="addItem()">Add Item</button>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Сменить статус</h3>
+    <div class="row">
+        <input id="orderIdForStatus" placeholder="orderId" />
+        <input id="status" placeholder="NEW/PAID/SHIPPED/CANCELLED" />
+        <button onclick="changeStatus()">Change</button>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Показать все заказы</h3>
+    <button onclick="loadAll()">Load All</button>
+</div>
+
+<div class="card">
+    <h3>Total revenue</h3>
+    <button onclick="loadRevenue()">Get Revenue</button>
+</div>
+
+<h3>Ответ сервера</h3>
+<pre id="out">---</pre>
+
+<script>
+    const out = (v) => document.getElementById("out").textContent =
+      typeof v === "string" ? v : JSON.stringify(v, null, 2);
+
+    async function createOrder() {
+      const body = {
+        customerName: document.getElementById("name").value,
+        customerEmail: document.getElementById("email").value,
+        createdAt: document.getElementById("date").value
+      };
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(body)
+      });
+      out(await res.json());
+    }
+
+    async function addItem() {
+      const orderId = document.getElementById("orderIdForItem").value;
+      const body = {
+        productName: document.getElementById("product").value,
+        price: Number(document.getElementById("price").value),
+        quantity: Number(document.getElementById("qty").value)
+      };
+      const res = await fetch(`/api/orders/${orderId}/items`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(body)
+      });
+      out(await res.json());
+    }
+
+    async function changeStatus() {
+      const orderId = document.getElementById("orderIdForStatus").value;
+      const body = { newStatus: document.getElementById("status").value };
+      const res = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(body)
+      });
+      out(await res.json());
+    }
+
+    async function loadAll() {
+      const res = await fetch("/api/orders");
+      out(await res.json());
+    }
+
+    async function loadRevenue() {
+      const res = await fetch("/api/orders/revenue");
+      out(await res.json());
+    }
+</script>
+</body>
+</html>
