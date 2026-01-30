@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Terea Admin</title>
+    <style>
+        :root{
+          --bg:#0b1220;
+          --card:#111a2e;
+          --muted:#7f8aa3;
+          --text:#eaf0ff;
+          --accent:#5b8cff;
+          --good:#22c55e;
+          --bad:#ef4444;
+          --line:rgba(255,255,255,.08);
+        }
+        *{box-sizing:border-box}
+        body{
+          margin:0;
+          font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+          background: radial-gradient(1200px 600px at 20% -10%, rgba(91,140,255,.35), transparent 60%),
+                      radial-gradient(900px 600px at 100% 0%, rgba(34,197,94,.18), transparent 55%),
+                      var(--bg);
+          color:var(--text);
+          min-height:100vh;
+          padding:24px;
+        }
+        .wrap{max-width:1100px;margin:0 auto;display:grid;gap:18px}
+        header{
+          display:flex;align-items:flex-end;justify-content:space-between;gap:14px
+        }
+        h1{margin:0;font-size:28px;letter-spacing:.2px}
+        .sub{margin:6px 0 0;color:var(--muted);font-size:14px}
+        .grid{
+          display:grid;
+          grid-template-columns: 380px 1fr;
+          gap:18px;
+        }
+        @media(max-width:900px){
+          .grid{grid-template-columns:1fr}
+        }
+        .card{
+          background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+          border:1px solid var(--line);
+          border-radius:16px;
+          padding:18px;
+          box-shadow:0 10px 30px rgba(0,0,0,.25);
+        }
+        .card h2{margin:0 0 12px;font-size:16px;color:#dbe6ff}
+        label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+        input, select{
+          width:100%;
+          padding:11px 12px;
+          border-radius:12px;
+          border:1px solid var(--line);
+          background:rgba(0,0,0,.18);
+          color:var(--text);
+          outline:none;
+        }
+        input:focus, select:focus{border-color:rgba(91,140,255,.55)}
+        .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .btn{
+          width:100%;
+          margin-top:14px;
+          padding:12px 14px;
+          border:none;
+          border-radius:12px;
+          background:linear-gradient(135deg, rgba(91,140,255,1), rgba(91,140,255,.75));
+          color:white;
+          font-weight:600;
+          cursor:pointer;
+        }
+        .btn:hover{filter:brightness(1.05)}
+        .btn.secondary{
+          background:rgba(255,255,255,.08);
+          border:1px solid var(--line);
+          color:var(--text);
+        }
+        .toolbar{
+          display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between
+        }
+        .toolbar .left{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+        .toolbar input{
+          width:240px;
+        }
+        table{
+          width:100%;
+          border-collapse:separate;
+          border-spacing:0;
+          overflow:hidden;
+          border-radius:14px;
+          border:1px solid var(--line);
+          background:rgba(0,0,0,.12);
+        }
+        thead th{
+          text-align:left;
+          font-size:12px;
+          color:var(--muted);
+          padding:12px 12px;
+          border-bottom:1px solid var(--line);
+          background:rgba(255,255,255,.03);
+        }
+        tbody td{
+          padding:12px 12px;
+          border-bottom:1px solid var(--line);
+          vertical-align:middle;
+          font-size:14px;
+        }
+        tbody tr:last-child td{border-bottom:none}
+        .pill{
+          display:inline-flex;align-items:center;gap:8px;
+          padding:6px 10px;border-radius:999px;
+          font-size:12px;font-weight:600;
+          border:1px solid var(--line);
+          background:rgba(255,255,255,.06);
+        }
+        .dot{width:8px;height:8px;border-radius:50%}
+        .dot.good{background:var(--good)}
+        .dot.bad{background:var(--bad)}
+        .actions{display:flex;gap:8px;flex-wrap:wrap}
+        .mini{
+          padding:8px 10px;border-radius:10px;
+          border:1px solid var(--line);
+          background:rgba(255,255,255,.06);
+          color:var(--text);
+          cursor:pointer;
+          font-size:12px;font-weight:600;
+        }
+        .mini:hover{filter:brightness(1.08)}
+        .mini.danger{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.25)}
+        .mini.good{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.25)}
+        .mini.bad{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25)}
+        .msg{
+          margin-top:12px;
+          padding:10px 12px;
+          border-radius:12px;
+          border:1px solid var(--line);
+          background:rgba(0,0,0,.14);
+          color:var(--muted);
+          font-size:13px;
+          min-height:40px;
+        }
+        .hint{color:var(--muted);font-size:12px;margin-top:8px}
+        .right h2{display:flex;align-items:center;justify-content:space-between}
+        .count{color:var(--muted);font-size:12px;font-weight:600}
+    </style>
+</head>
+
+<body>
+<div class="wrap">
+    <header>
+        <div>
+            <h1>Terea Admin</h1>
+            <div class="sub">Spring Boot + PostgreSQL · Управление товарами</div>
+        </div>
+        <button class="btn secondary" onclick="loadTereas()">Обновить список</button>
+    </header>
+
+    <div class="grid">
+        <!-- FORM -->
+        <section class="card">
+            <h2>Добавить товар</h2>
+
+            <label>Название (productName)</label>
+            <input id="productName" placeholder="Например: Terea" />
+
+            <label>Вкус (flavor)</label>
+            <input id="flavor" placeholder="Например: Blueberry" />
+
+            <div class="row">
+                <div>
+                    <label>Цена (price)</label>
+                    <input id="price" type="number" min="0" step="0.01" placeholder="1200" />
+                </div>
+                <div>
+                    <label>Количество (quantity)</label>
+                    <input id="quantity" type="number" min="0" step="1" placeholder="10" />
+                </div>
+            </div>
+
+            <label>Доступность (available)</label>
+            <select id="available">
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+            </select>
+
+            <button class="btn" onclick="createTerea()">Сохранить в PostgreSQL</button>
+
+            <div class="hint">
+                Эта страница общается с твоим API по адресу:
+                <b id="apiBaseText"></b>
+            </div>
+
+            <div class="msg" id="msg">Готово. Нажми “Обновить список”, чтобы увидеть данные.</div>
+        </section>
+
+        <!-- LIST -->
+        <section class="card right">
+            <h2>
+                Список товаров
+                <span class="count" id="count">0</span>
+            </h2>
+
+            <div class="toolbar">
+                <div class="left">
+                    <input id="search" placeholder="Поиск по названию/вкусу..." oninput="renderTable()" />
+                </div>
+            </div>
+
+            <div style="margin-top:12px; overflow:auto;">
+                <table>
+                    <thead>
+                    <tr>
+                        <th style="width:56px;">ID</th>
+                        <th>Название</th>
+                        <th>Вкус</th>
+                        <th style="width:110px;">Цена</th>
+                        <th style="width:110px;">Кол-во</th>
+                        <th style="width:140px;">Статус</th>
+                        <th style="width:240px;">Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbody">
+                    <!-- rows here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+    // Если фронт и бэк на одном домене (Spring static), можно оставить пустым:
+    const API_BASE = ""; // или "http://localhost:8080"
+    document.getElementById("apiBaseText").textContent = API_BASE || "тот же домен (Spring static)";
+
+    let cache = [];
+
+    function setMsg(text, ok=true){
+      const el = document.getElementById("msg");
+      el.style.color = ok ? "#b9c6e6" : "#ffb4b4";
+      el.textContent = text;
+    }
+
+    async function loadTereas(){
+      try{
+        const res = await fetch(`${API_BASE}/tereas`);
+        if(!res.ok) throw new Error("GET /tereas failed");
+        cache = await res.json();
+        renderTable();
+        setMsg("Список обновлён ✅");
+      }catch(e){
+        console.error(e);
+        setMsg("Ошибка загрузки списка. Проверь, что сервер запущен и эндпоинт /tereas есть.", false);
+      }
+    }
+
+    function renderTable(){
+      const q = (document.getElementById("search").value || "").toLowerCase().trim();
+      const rows = cache.filter(t =>
+        !q ||
+        (t.productName || "").toLowerCase().includes(q) ||
+        (t.flavor || "").toLowerCase().includes(q)
+      );
+
+      document.getElementById("count").textContent = `${rows.length} шт.`;
+
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = rows.map(t => {
+        const available = !!t.available;
+        return `
+          <tr>
+            <td>${t.id ?? ""}</td>
+            <td>${escapeHtml(t.productName ?? "")}</td>
+            <td>${escapeHtml(t.flavor ?? "")}</td>
+            <td>${Number(t.price ?? 0).toFixed(2)}</td>
+            <td>${t.quantity ?? 0}</td>
+            <td>
+              <span class="pill">
+                <span class="dot ${available ? "good" : "bad"}"></span>
+                ${available ? "Доступен" : "Недоступен"}
+              </span>
+            </td>
+            <td>
+              <div class="actions">
+                ${available
+                  ? `<button class="mini bad" onclick="setAvailability(${t.id}, false)">Выключить</button>`
+                  : `<button class="mini good" onclick="setAvailability(${t.id}, true)">Включить</button>`
+                }
+                <button class="mini danger" onclick="deleteTerea(${t.id})">Удалить</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function createTerea(){
+      const productName = document.getElementById("productName").value.trim();
+      const flavor = document.getElementById("flavor").value.trim();
+      const price = Number(document.getElementById("price").value);
+      const quantity = Number(document.getElementById("quantity").value);
+      const available = document.getElementById("available").value === "true";
+
+      if(!productName || !flavor){
+        setMsg("Заполни productName и flavor.", false);
+        return;
+      }
+      if(!(price > 0)){
+        setMsg("Цена должна быть больше 0.", false);
+        return;
+      }
+      if(quantity < 0 || !Number.isFinite(quantity)){
+        setMsg("Количество не может быть отрицательным.", false);
+        return;
+      }
+
+      try{
+        const res = await fetch(`${API_BASE}/tereas`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ productName, flavor, price, quantity, available })
+        });
+        if(!res.ok){
+          const txt = await res.text();
+          throw new Error(txt || "POST /tereas failed");
+        }
+        // очистим форму
+        document.getElementById("productName").value = "";
+        document.getElementById("flavor").value = "";
+        document.getElementById("price").value = "";
+        document.getElementById("quantity").value = "";
+        document.getElementById("available").value = "true";
+
+        await loadTereas();
+        setMsg("Товар добавлен и сохранён ✅");
+      }catch(e){
+        console.error(e);
+        setMsg("Ошибка добавления. Проверь backend и JSON поля.", false);
+      }
+    }
+
+    async function deleteTerea(id){
+      if(!confirm(`Удалить товар с id=${id}?`)) return;
+      try{
+        const res = await fetch(`${API_BASE}/tereas/${id}`, { method: "DELETE" });
+        if(!res.ok && res.status !== 204) throw new Error("DELETE failed");
+        await loadTereas();
+        setMsg(`Удалено: id=${id} ✅`);
+      }catch(e){
+        console.error(e);
+        setMsg("Ошибка удаления.", false);
+      }
+    }
+
+    async function setAvailability(id, value){
+      try{
+        const res = await fetch(`${API_BASE}/tereas/${id}/availability?value=${value}`, {
+          method: "PATCH"
+        });
+        if(!res.ok && res.status !== 204) throw new Error("PATCH failed");
+        await loadTereas();
+        setMsg(`Статус обновлён: id=${id} → ${value ? "Доступен" : "Недоступен"} ✅`);
+      }catch(e){
+        console.error(e);
+        setMsg("Ошибка обновления availability.", false);
+      }
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // автозагрузка при старте
+    loadTereas();
+</script>
+</body>
+</html>
