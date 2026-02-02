@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Task Manager (JWT)</title>
+    <style>
+        :root{
+          --bg:#0b1220; --card:#111a2e; --text:#eaf0ff; --muted:#7f8aa3;
+          --line:rgba(255,255,255,.10); --accent:#5b8cff; --good:#22c55e; --bad:#ef4444;
+        }
+        *{box-sizing:border-box}
+        body{
+          margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+          background: radial-gradient(1200px 600px at 20% -10%, rgba(91,140,255,.35), transparent 60%),
+                      radial-gradient(900px 600px at 100% 0%, rgba(34,197,94,.18), transparent 55%),
+                      var(--bg);
+          color:var(--text); min-height:100vh; padding:24px;
+        }
+        .wrap{max-width:1100px;margin:0 auto;display:grid;gap:16px}
+        header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+        h1{margin:0;font-size:26px}
+        .sub{color:var(--muted);font-size:13px;margin-top:6px}
+        .grid{display:grid;grid-template-columns:360px 1fr;gap:16px}
+        @media(max-width:900px){.grid{grid-template-columns:1fr}}
+        .card{
+          background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+          border:1px solid var(--line); border-radius:16px; padding:16px;
+          box-shadow:0 10px 30px rgba(0,0,0,.25);
+        }
+        .card h2{margin:0 0 12px;font-size:15px;color:#dbe6ff}
+        label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+        input, select, textarea{
+          width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--line);
+          background:rgba(0,0,0,.18); color:var(--text); outline:none;
+        }
+        textarea{min-height:90px; resize:vertical}
+        input:focus, select:focus, textarea:focus{border-color:rgba(91,140,255,.55)}
+        .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .btn{
+          width:100%; margin-top:12px; padding:11px 14px; border:none; border-radius:12px;
+          background:linear-gradient(135deg, rgba(91,140,255,1), rgba(91,140,255,.75));
+          color:white; font-weight:700; cursor:pointer;
+        }
+        .btn.secondary{background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--text)}
+        .btn.danger{background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.25);color:#ffd3d3}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+        .msg{
+          margin-top:12px; padding:10px 12px; border-radius:12px;
+          border:1px solid var(--line); background:rgba(0,0,0,.14);
+          color:var(--muted); font-size:13px; min-height:42px;
+          white-space:pre-wrap;
+        }
+        table{
+          width:100%; border-collapse:separate; border-spacing:0;
+          border-radius:14px; overflow:hidden;
+          border:1px solid var(--line); background:rgba(0,0,0,.12);
+        }
+        thead th{
+          text-align:left; font-size:12px; color:var(--muted);
+          padding:12px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.03);
+        }
+        tbody td{
+          padding:12px; border-bottom:1px solid var(--line); font-size:14px; vertical-align:top;
+        }
+        tbody tr:last-child td{border-bottom:none}
+        .pill{
+          display:inline-flex;align-items:center;gap:8px; padding:6px 10px;border-radius:999px;
+          font-size:12px;font-weight:700;border:1px solid var(--line);background:rgba(255,255,255,.06);
+        }
+        .dot{width:8px;height:8px;border-radius:50%}
+        .dot.good{background:var(--good)} .dot.bad{background:var(--bad)}
+        .actions{display:flex;gap:8px;flex-wrap:wrap}
+        .mini{
+          padding:8px 10px;border-radius:10px;border:1px solid var(--line);
+          background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-size:12px;font-weight:700;
+        }
+        .mini:hover{filter:brightness(1.08)}
+        .mini.danger{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.25)}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div>
+            <h1>Task Manager</h1>
+            <div class="sub">Spring Boot + PostgreSQL + Spring Security + JWT</div>
+        </div>
+        <div class="actions">
+            <button class="btn secondary" onclick="loadTasks()">Обновить задачи</button>
+            <button class="btn danger" onclick="logout()">Выйти</button>
+        </div>
+    </header>
+
+    <div class="grid">
+        <!-- AUTH -->
+        <section class="card">
+            <h2>Авторизация</h2>
+
+            <label>Username</label>
+            <input id="a_username" placeholder="alex" />
+
+            <label>Email (только для регистрации)</label>
+            <input id="a_email" placeholder="alex@mail.com" />
+
+            <label>Password</label>
+            <input id="a_password" type="password" placeholder="123456" />
+
+            <div class="row">
+                <button class="btn" onclick="register()">Register</button>
+                <button class="btn secondary" onclick="login()">Login</button>
+            </div>
+
+            <label>JWT Token (авто)</label>
+            <textarea id="token" placeholder="Здесь появится token после login" readonly></textarea>
+
+            <div class="msg" id="authMsg">Сделай Register → Login. После login токен сохранится.</div>
+        </section>
+
+        <!-- TASKS -->
+        <section class="card">
+            <h2>Задачи</h2>
+
+            <div class="row">
+                <div>
+                    <label>Title</label>
+                    <input id="t_title" placeholder="Learn JWT" />
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select id="t_status">
+                        <option>TODO</option>
+                        <option>IN_PROGRESS</option>
+                        <option>DONE</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Description</label>
+            <textarea id="t_desc" placeholder="Что нужно сделать..."></textarea>
+
+            <label>Deadline (ISO) — необязательно</label>
+            <input id="t_deadline" placeholder="2026-02-02T18:00:00" />
+
+            <label>User ID (временно, пока не привязали tasks к токену)</label>
+            <input id="t_userId" type="number" min="1" step="1" placeholder="1" />
+
+            <button class="btn" onclick="createTask()">Создать задачу</button>
+
+            <div class="msg" id="taskMsg">Подсказка: сначала Login, потом работай с задачами.</div>
+
+            <div style="margin-top:12px; overflow:auto;">
+                <table>
+                    <thead>
+                    <tr>
+                        <th style="width:60px;">ID</th>
+                        <th>Title / Description</th>
+                        <th style="width:130px;">Status</th>
+                        <th style="width:190px;">Deadline</th>
+                        <th style="width:260px;">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+    const API_BASE = ""; // если фронт в Spring static — оставь пустым
+
+    function setMsg(id, text, ok=true){
+      const el = document.getElementById(id);
+      el.style.color = ok ? "#b9c6e6" : "#ffb4b4";
+      el.textContent = text;
+    }
+
+    function getToken(){
+      return localStorage.getItem("jwt") || "";
+    }
+    function setToken(token){
+      localStorage.setItem("jwt", token);
+      document.getElementById("token").value = token || "";
+    }
+
+    async function register(){
+      try{
+        const username = document.getElementById("a_username").value.trim();
+        const email = document.getElementById("a_email").value.trim();
+        const password = document.getElementById("a_password").value;
+
+        const res = await fetch(`${API_BASE}/auth/register`, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ username, email, password })
+        });
+        const txt = await res.text();
+        if(!res.ok) throw new Error(txt);
+
+        setMsg("authMsg", "Регистрация OK ✅\nТеперь нажми Login.", true);
+      }catch(e){
+        console.error(e);
+        setMsg("authMsg", "Ошибка register ❌\n" + e.message, false);
+      }
+    }
+
+    async function login(){
+      try{
+        const username = document.getElementById("a_username").value.trim();
+        const password = document.getElementById("a_password").value;
+
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json().catch(()=>null);
+        if(!res.ok) throw new Error(JSON.stringify(data) || "login failed");
+
+        if(!data || !data.token) throw new Error("Token не пришёл. Проверь AuthController/login.");
+
+        setToken(data.token);
+        setMsg("authMsg", "Логин OK ✅\nТокен сохранён. Теперь /tasks доступны.", true);
+        await loadTasks();
+      }catch(e){
+        console.error(e);
+        setMsg("authMsg", "Ошибка login ❌\n" + e.message, false);
+      }
+    }
+
+    function logout(){
+      setToken("");
+      document.getElementById("tbody").innerHTML = "";
+      setMsg("taskMsg", "Вышел. Сначала Login, чтобы получить доступ к задачам.", true);
+    }
+
+    async function loadTasks(){
+      try{
+        const token = getToken();
+        if(!token){
+          setMsg("taskMsg", "Нет токена. Сделай Login.", false);
+          return;
+        }
+
+        const res = await fetch(`${API_BASE}/tasks`, {
+          headers:{ "Authorization": `Bearer ${token}` }
+        });
+        if(!res.ok){
+          const txt = await res.text();
+          throw new Error(txt || `HTTP ${res.status}`);
+        }
+        const tasks = await res.json();
+        renderTasks(tasks);
+        setMsg("taskMsg", "Задачи загружены ✅", true);
+      }catch(e){
+        console.error(e);
+        setMsg("taskMsg", "Ошибка загрузки задач ❌\n" + e.message, false);
+      }
+    }
+
+    function renderTasks(tasks){
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = (tasks || []).map(t => {
+        const status = t.status || "TODO";
+        const dot = status === "DONE" ? "good" : "bad";
+        const deadline = t.deadline || "";
+        const desc = t.description || "";
+        return `
+          <tr>
+            <td>${t.id ?? ""}</td>
+            <td>
+              <b>${escapeHtml(t.title ?? "")}</b>
+              <div style="color:#7f8aa3; font-size:12px; margin-top:6px;">${escapeHtml(desc)}</div>
+            </td>
+            <td>
+              <span class="pill">
+                <span class="dot ${dot}"></span>
+                ${status}
+              </span>
+            </td>
+            <td>${escapeHtml(deadline)}</td>
+            <td>
+              <div class="actions">
+                <button class="mini" onclick="setStatus(${t.id}, 'TODO')">TODO</button>
+                <button class="mini" onclick="setStatus(${t.id}, 'IN_PROGRESS')">IN_PROGRESS</button>
+                <button class="mini" onclick="setStatus(${t.id}, 'DONE')">DONE</button>
+                <button class="mini danger" onclick="deleteTask(${t.id})">Удалить</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function createTask(){
+      try{
+        const token = getToken();
+        if(!token) { setMsg("taskMsg","Нет токена. Сделай Login.", false); return; }
+
+        const title = document.getElementById("t_title").value.trim();
+        const description = document.getElementById("t_desc").value.trim();
+        const status = document.getElementById("t_status").value;
+        const deadlineRaw = document.getElementById("t_deadline").value.trim();
+        const userId = Number(document.getElementById("t_userId").value);
+
+        if(!title){ setMsg("taskMsg","Title обязателен.", false); return; }
+        if(!userId || userId < 1){ setMsg("taskMsg","Пока что нужен userId (например 1).", false); return; }
+
+        const payload = {
+          title,
+          description,
+          status,
+          deadline: deadlineRaw ? deadlineRaw : null,
+          user: { id: userId }
+        };
+
+        const res = await fetch(`${API_BASE}/tasks`, {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const txt = await res.text();
+        if(!res.ok) throw new Error(txt);
+
+        setMsg("taskMsg","Задача создана ✅", true);
+        document.getElementById("t_title").value = "";
+        document.getElementById("t_desc").value = "";
+        document.getElementById("t_deadline").value = "";
+        await loadTasks();
+      }catch(e){
+        console.error(e);
+        setMsg("taskMsg","Ошибка создания ❌\n" + e.message, false);
+      }
+    }
+
+    async function setStatus(id, value){
+      try{
+        const token = getToken();
+        const res = await fetch(`${API_BASE}/tasks/${id}/status?value=${value}`, {
+          method:"PATCH",
+          headers:{ "Authorization": `Bearer ${token}` }
+        });
+        if(!res.ok){
+          const txt = await res.text();
+          throw new Error(txt || `HTTP ${res.status}`);
+        }
+        setMsg("taskMsg", `Статус обновлён: id=${id} → ${value} ✅`, true);
+        await loadTasks();
+      }catch(e){
+        console.error(e);
+        setMsg("taskMsg","Ошибка обновления статуса ❌\n" + e.message, false);
+      }
+    }
+
+    async function deleteTask(id){
+      if(!confirm(`Удалить задачу id=${id}?`)) return;
+      try{
+        const token = getToken();
+        const res = await fetch(`${API_BASE}/tasks/${id}`, {
+          method:"DELETE",
+          headers:{ "Authorization": `Bearer ${token}` }
+        });
+        if(!res.ok && res.status !== 204){
+          const txt = await res.text();
+          throw new Error(txt || `HTTP ${res.status}`);
+        }
+        setMsg("taskMsg", `Удалено id=${id} ✅`, true);
+        await loadTasks();
+      }catch(e){
+        console.error(e);
+        setMsg("taskMsg","Ошибка удаления ❌\n" + e.message, false);
+      }
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // при открытии страницы подтянуть токен (если уже логинился)
+    setToken(getToken());
+</script>
+</body>
+</html>
