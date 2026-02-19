@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tasks • UI</title>
+    <style>
+        :root{
+          --bg:#0b1020; --card:#121a33; --muted:#7f8bb3; --text:#e8ecff;
+          --accent:#7c5cff; --ok:#2ee59d; --danger:#ff4d6d; --border:#223056;
+          --shadow: 0 16px 40px rgba(0,0,0,.35);
+          --r:18px;
+          --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+          --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        }
+        *{box-sizing:border-box}
+        body{
+          margin:0; font-family:var(--sans); color:var(--text);
+          background: radial-gradient(1200px 700px at 20% 0%, rgba(124,92,255,.25), transparent 55%),
+                      radial-gradient(900px 600px at 100% 20%, rgba(46,229,157,.16), transparent 50%),
+                      var(--bg);
+          min-height:100vh;
+          display:flex; justify-content:center; align-items:flex-start;
+          padding:28px 16px;
+        }
+        .app{width:min(980px,100%)}
+        .top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+        .brand{display:flex;gap:12px;align-items:center}
+        .logo{
+          width:44px;height:44px;border-radius:14px;
+          background: linear-gradient(135deg, rgba(124,92,255,1), rgba(46,229,157,.95));
+          box-shadow: 0 10px 25px rgba(124,92,255,.25);
+        }
+        h1{margin:0;font-size:22px}
+        .sub{margin-top:2px;color:var(--muted);font-size:13px}
+        .panel{
+          background: rgba(18,26,51,.72);
+          border:1px solid rgba(34,48,86,.75);
+          border-radius: var(--r);
+          box-shadow: var(--shadow);
+          backdrop-filter: blur(10px);
+          overflow:hidden;
+        }
+        .toolbar{
+          padding:14px;
+          display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+          border-bottom:1px solid rgba(34,48,86,.65);
+        }
+        .field{
+          display:flex;align-items:center;gap:10px;
+          background: rgba(11,16,32,.55);
+          border:1px solid rgba(34,48,86,.75);
+          border-radius:14px;
+          padding:10px 12px;
+        }
+        input{
+          background:transparent;border:none;outline:none;color:var(--text);
+          font-size:14px;
+        }
+        input::placeholder{color:rgba(127,139,179,.8)}
+        .btn{
+          border:1px solid rgba(34,48,86,.75);
+          background: rgba(11,16,32,.45);
+          color:var(--text);
+          padding:10px 12px; border-radius:14px;
+          cursor:pointer; font-weight:600;
+        }
+        .btn:hover{border-color: rgba(124,92,255,.65)}
+        .btn.primary{
+          background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(124,92,255,.55));
+          border-color: rgba(124,92,255,.9);
+        }
+        .btn.danger{border-color: rgba(255,77,109,.7)}
+        .pill{
+          font-family:var(--mono);
+          font-size:12px; color:rgba(232,236,255,.9);
+          padding:7px 10px; border-radius:999px;
+          background: rgba(11,16,32,.55);
+          border:1px solid rgba(34,48,86,.75);
+        }
+        .list{padding:8px}
+        .item{
+          display:flex;gap:12px;align-items:center;justify-content:space-between;
+          padding:12px;margin:8px;
+          background: rgba(11,16,32,.45);
+          border:1px solid rgba(34,48,86,.65);
+          border-radius:16px;
+        }
+        .meta{display:flex;flex-direction:column;gap:6px;min-width:0}
+        .title{display:flex;gap:10px;align-items:center;font-size:15px;font-weight:800;word-break:break-word}
+        .title.done{opacity:.75; text-decoration: line-through}
+        .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+        .small{font-size:12px;color:var(--muted)}
+        .chip{
+          font-size:11px; padding:4px 8px; border-radius:999px;
+          border:1px solid rgba(34,48,86,.75);
+          background: rgba(18,26,51,.55);
+          color: rgba(232,236,255,.9);
+          font-family: var(--mono);
+        }
+        .chip.ok{border-color: rgba(46,229,157,.65)}
+        .chip.no{border-color: rgba(255,77,109,.55)}
+        .empty{padding:26px 18px;color:rgba(127,139,179,.95);text-align:center}
+        .status{
+          padding:12px 14px; border-top:1px solid rgba(34,48,86,.65);
+          display:flex;gap:10px;align-items:center;justify-content:space-between;
+          color: var(--muted); font-size:13px;
+        }
+        .toast{
+          position: fixed; left: 16px; bottom: 16px;
+          background: rgba(18,26,51,.92);
+          border: 1px solid rgba(34,48,86,.75);
+          color: var(--text);
+          padding: 12px 14px;
+          border-radius: 14px;
+          box-shadow: var(--shadow);
+          max-width: min(520px, calc(100vw - 32px));
+          display:none;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="top">
+        <div class="brand">
+            <div class="logo"></div>
+            <div>
+                <h1>Tasks</h1>
+                <div class="sub">UI под API: GET /tasks • POST /tasks?title= • PATCH /tasks/{id}/done • DELETE</div>
+            </div>
+        </div>
+        <div class="row">
+            <span class="pill">API: <span id="apiLabel"></span></span>
+            <button class="btn" id="reloadBtn">↻ Reload</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="toolbar">
+            <div class="field">
+                <span class="small">Base URL</span>
+                <input id="baseUrl" style="width:240px" placeholder="http://localhost:8080" />
+            </div>
+
+            <div class="field" style="flex:1;min-width:240px">
+                <input id="title" style="width:100%" placeholder="Новая задача..." />
+            </div>
+
+            <button class="btn primary" id="addBtn">＋ Add</button>
+        </div>
+
+        <div class="list" id="list"></div>
+
+        <div class="status">
+            <div><span id="count"></span></div>
+            <div class="small">Клик по чекбоксу меняет done через PATCH</div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const els = {
+      baseUrl: document.getElementById("baseUrl"),
+      apiLabel: document.getElementById("apiLabel"),
+      reloadBtn: document.getElementById("reloadBtn"),
+      addBtn: document.getElementById("addBtn"),
+      title: document.getElementById("title"),
+      list: document.getElementById("list"),
+      count: document.getElementById("count"),
+      toast: document.getElementById("toast"),
+    };
+
+    const DEFAULT_BASE = localStorage.getItem("tasks_base") || "http://localhost:8080";
+    els.baseUrl.value = DEFAULT_BASE;
+
+    let tasks = [];
+
+    function base() {
+      return (els.baseUrl.value || "").trim().replace(/\/+$/, "") || "http://localhost:8080";
+    }
+    function syncLabel() {
+      els.apiLabel.textContent = base();
+      localStorage.setItem("tasks_base", base());
+    }
+    function toast(msg, ok=true) {
+      els.toast.style.display = "block";
+      els.toast.textContent = (ok ? "OK: " : "ERR: ") + msg;
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> els.toast.style.display="none", 2200);
+    }
+
+    async function api(path, options={}) {
+      const res = await fetch(base() + path, options);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      if (res.status === 204) return null;
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) return res.json();
+      return res.text();
+    }
+
+    function escapeHtml(s) {
+      return (s ?? "").toString()
+        .replaceAll("&","&amp;").replaceAll("<","&lt;")
+        .replaceAll(">","&gt;").replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function render() {
+      els.count.textContent = `Всего задач: ${tasks.length}`;
+
+      if (!tasks.length) {
+        els.list.innerHTML = `<div class="empty">Пока пусто. Добавь первую задачу ✨</div>`;
+        return;
+      }
+
+      const sorted = [...tasks].sort((a,b)=> (a.id??0) - (b.id??0));
+
+      els.list.innerHTML = sorted.map(t => `
+        <div class="item" data-id="${t.id}">
+          <div class="meta">
+            <div class="title ${t.done ? "done" : ""}">
+              <input type="checkbox" ${t.done ? "checked" : ""} data-action="toggle" />
+              <span>${escapeHtml(t.title ?? "")}</span>
+            </div>
+            <div class="row">
+              <span class="chip">id: ${t.id}</span>
+              ${t.done ? `<span class="chip ok">DONE</span>` : `<span class="chip no">TODO</span>`}
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn danger" data-action="delete">🗑 Delete</button>
+          </div>
+        </div>
+      `).join("");
+
+      // events
+      els.list.querySelectorAll(".item").forEach(item => {
+        const id = Number(item.getAttribute("data-id"));
+
+        const cb = item.querySelector('input[type="checkbox"][data-action="toggle"]');
+        cb.addEventListener("change", async (e) => {
+          const done = e.target.checked;
+          try {
+            await api(`/tasks/${id}/done?done=${done}`, { method: "PATCH" });
+            await load();
+            toast(`Task #${id} -> done=${done}`);
+          } catch (err) {
+            e.target.checked = !done;
+            toast(err.message, false);
+          }
+        });
+
+        item.querySelector('[data-action="delete"]').addEventListener("click", async () => {
+          if (!confirm(`Удалить задачу #${id}?`)) return;
+          try {
+            await api(`/tasks/${id}`, { method: "DELETE" });
+            await load();
+            toast(`Deleted #${id}`);
+          } catch (err) {
+            toast(err.message, false);
+          }
+        });
+      });
+    }
+
+    async function load() {
+      syncLabel();
+      tasks = await api("/tasks", { method: "GET" });
+      if (!Array.isArray(tasks)) tasks = [];
+      render();
+    }
+
+    async function add(title) {
+      const q = encodeURIComponent(title);
+      await api(`/tasks?title=${q}`, { method: "POST" });
+      await load();
+    }
+
+    els.reloadBtn.addEventListener("click", () => load().catch(e => toast(e.message,false)));
+    els.baseUrl.addEventListener("change", () => load().catch(e => toast(e.message,false)));
+
+    els.addBtn.addEventListener("click", async () => {
+      const title = els.title.value.trim();
+      if (!title) return toast("Введите название", false);
+      try {
+        await add(title);
+        els.title.value = "";
+        toast("Created");
+      } catch (e) {
+        toast(e.message, false);
+      }
+    });
+
+    els.title.addEventListener("keydown", (e)=> { if (e.key === "Enter") els.addBtn.click(); });
+
+    load().catch(e => toast(e.message, false));
+</script>
+</body>
+</html>
